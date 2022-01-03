@@ -56,6 +56,33 @@ void ConvexPolygonShape2D::set_point_cloud(const Vector<Vector2> &p_points) {
 void ConvexPolygonShape2D::set_points(const Vector<Vector2> &p_points) {
 	points = p_points;
 
+#ifdef DEBUG_ENABLED
+	// Give a warning if the shape is concave.
+	const int count = points.size();
+	if (count > 4 && points[0] == points[count - 1]) {
+		Vector2 v1 = points[0] - points[count - 2];
+		Vector2 v2 = points[1] - points[0];
+		real_t det = v1.x * v2.y - v2.x * v1.y;
+
+		if (det != 0) {
+			const bool det_sign = det > 0;
+
+			for (int i = 1; i < count - 1; i++) {
+				v1 = v2;
+				v2 = points[i + 1] - points[i];
+				det = v1.x * v2.y - v2.x * v1.y;
+
+				if (det == 0)
+					break;
+				if (det_sign ^ (det > 0)) {
+					WARN_PRINT("ConvexPolygonShape2D has a concave hull point, this should only use convex hull points.");
+					break;
+				}
+			}
+		}
+	}
+#endif
+
 	_update_shape();
 }
 
